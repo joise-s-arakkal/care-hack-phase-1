@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sound Explorer - Accessible Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(5, 60px);
+      grid-template-rows: repeat(5, 60px);
+      gap: 5px;
+      margin-top: 20px;
+    }
+    .cell {
+      width: 60px;
+      height: 60px;
+      background: #222;
+      border: 2px solid #555;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5em;
+      user-select: none;
+    }
+    .player {
+      background: #0f0;
+      color: #000;
+      font-weight: bold;
+    }
+    .treasure {
+      background: #fc0;
+      color: #000;
+      font-weight: bold;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 1.2em;
+      min-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sound Explorer</h1>
+  <p>Use arrow keys to move. Find the treasure using sound clues!</p>
+  <div id="grid"></div>
+  <div id="message" aria-live="polite"></div>
+
+  <script>
+    const gridSize = 5;
+    const grid = document.getElementById('grid');
+    const message = document.getElementById('message');
+
+    // Player and treasure positions
+    let playerPos = { x: 0, y: 0 };
+    const treasurePos = {
+      x: Math.floor(Math.random() * gridSize),
+      y: Math.floor(Math.random() * gridSize)
+    };
+
+    // Create grid cells
+    const cells = [];
+    for (let i = 0; i < gridSize * gridSize; i++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      grid.appendChild(cell);
+      cells.push(cell);
+    }
+
+    function renderGrid() {
+      cells.forEach(cell => {
+        cell.classList.remove('player', 'treasure');
+        cell.textContent = '';
+      });
+      const playerIndex = playerPos.y * gridSize + playerPos.x;
+      const treasureIndex = treasurePos.y * gridSize + treasurePos.x;
+      cells[playerIndex].classList.add('player');
+      cells[playerIndex].textContent = '🙂';
+      cells[treasureIndex].classList.add('treasure');
+      // Uncomment below line to show treasure visually for testing
+      // cells[treasureIndex].textContent = '💰';
+    }
+
+    // Calculate distance between player and treasure
+    function distance() {
+      return Math.abs(playerPos.x - treasurePos.x) + Math.abs(playerPos.y - treasurePos.y);
+    }
+
+    // Play beep sound based on distance (closer = higher beep frequency)
+    function playBeep() {
+      const dist = distance();
+      if (dist === 0) {
+        message.textContent = "🎉 You found the treasure! Congratulations!";
+        const synth = new AudioContext();
+        const o = synth.createOscillator();
+        o.frequency.value = 1000;
+        o.connect(synth.destination);
+        o.start();
+        setTimeout(() => {
+          o.stop();
+          synth.close();
+        }, 500);
+        return;
+      }
+
+      message.textContent = Distance to treasure: ${dist};
+
+      const baseFreq = 200;
+      const freq = baseFreq + (gridSize * 200) / dist;
+
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      oscillator.connect(audioCtx.destination);
+      oscillator.start();
+      setTimeout(() => {
+        oscillator.stop();
+        audioCtx.close();
+      }, 200);
+    }
+
+    // Handle arrow key moves
+    window.addEventListener('keydown', e => {
+      switch (e.key) {
+        case 'ArrowUp':
+          if (playerPos.y > 0) playerPos.y--;
+          break;
+        case 'ArrowDown':
+          if (playerPos.y < gridSize - 1) playerPos.y++;
+          break;
+        case 'ArrowLeft':
+          if (playerPos.x > 0) playerPos.x--;
+          break;
+        case 'ArrowRight':
+          if (playerPos.x < gridSize - 1) playerPos.x++;
+          break;
+        default:
+          return; // ignore other keys
+      }
+      renderGrid();
+      playBeep();
+    });
+
+    // Initial render and beep
+    renderGrid();
+    playBeep();
+  </script>
+</body>
+</html>
