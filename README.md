@@ -1,4 +1,4 @@
-# Sound Explorer
+# Sound Explorer1
 
 Sound Explorer is a simple, accessible web-based game where players navigate a grid using sound clues to find a hidden treasure. The game is designed to be playable by everyone, including those with visual impairments, as it relies on audio feedback to guide the player.
 
